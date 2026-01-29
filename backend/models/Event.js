@@ -42,6 +42,7 @@ const eventSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
+      trim: true,
     },
 
     status: {
@@ -60,14 +61,14 @@ const eventSchema = new mongoose.Schema(
       default: [],
     },
 
-    // 📌 NEW: Brochure details
+    /* 📎 Brochure (optional) */
     brochure: {
       fileName: String,
       fileUrl: String,
       fileType: String,
     },
 
-    // 📌 Admin / Faculty who created event
+    /* 👤 Creator */
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

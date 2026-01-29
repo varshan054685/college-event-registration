@@ -48,28 +48,34 @@ const VerifyOtp = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <h2 className="login-title">Verify OTP</h2>
-        <p className="login-subtitle">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-md p-6">
+        <h2 className="text-2xl font-semibold text-center text-gray-800">
+          Verify OTP
+        </h2>
+        <p className="text-center text-gray-500 mt-1 mb-6">
           Enter the OTP sent to your email
         </p>
 
-        {error && <div className="login-error">{error}</div>}
+        {error && (
+          <div className="mb-4 rounded-md bg-red-100 px-4 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleVerifyOtp}>
+        <form onSubmit={handleVerifyOtp} className="space-y-4">
           <input
             type="text"
-            className="login-input"
             placeholder="Enter 6-digit OTP"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <button
             type="submit"
-            className={`login-button ${loading ? "loading" : ""}`}
             disabled={loading}
+            className="w-full rounded-md bg-indigo-600 py-2 text-white font-medium hover:bg-indigo-700 transition disabled:opacity-50"
           >
             {loading ? "Verifying..." : "Verify OTP"}
           </button>

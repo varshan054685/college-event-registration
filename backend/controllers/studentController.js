@@ -2,18 +2,27 @@ const User = require("../models/User");
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 
-// @desc    Complete student profile
-// @route   PUT /api/student/profile
-// @access  Private (Student only)
+/* =========================
+   COMPLETE STUDENT PROFILE
+   ========================= */
 const completeProfile = async (req, res) => {
   try {
-    const { rollNumber, registrationNumber, contactNumber, department, classTeacherId } = req.body;
-
-    if (!rollNumber || !registrationNumber || !contactNumber || !department || !classTeacherId) {
-      return res.status(400).json({ message: "Please provide all required fields" });
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Access denied" });
     }
 
-    // Verify class teacher exists and is staff
+    const {
+      rollNumber,
+      registrationNumber,
+      contactNumber,
+      department,
+      classTeacherId,
+    } = req.body;
+
+    if (!rollNumber || !registrationNumber || !contactNumber || !department || !classTeacherId) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const classTeacher = await User.findById(classTeacherId);
     if (!classTeacher || classTeacher.role !== "staff") {
       return res.status(400).json({ message: "Invalid class teacher" });
@@ -38,13 +47,16 @@ const completeProfile = async (req, res) => {
   }
 };
 
-// @desc    Get events available for student (only if profile completed)
-// @route   GET /api/student/events
-// @access  Private (Student only)
+/* =========================
+   GET AVAILABLE EVENTS
+   ========================= */
 const getAvailableEvents = async (req, res) => {
   try {
-    const student = await User.findById(req.user._id);
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
+    const student = await User.findById(req.user._id);
     if (!student.profileCompleted) {
       return res.status(403).json({
         message: "Please complete your profile first",
@@ -52,14 +64,14 @@ const getAvailableEvents = async (req, res) => {
       });
     }
 
-    // Get events that match student's department and class
+    const staff = await User.findById(student.classTeacherId);
+
     const events = await Event.find({
       $or: [
         { allowedDepartments: { $in: [student.department] } },
-        { allowedClasses: { $in: [student.className] } },
-        { allowedDepartments: { $size: 0 } }, // If no restrictions
+        staff ? { allowedClasses: { $in: [staff.className] } } : {},
+        { allowedDepartments: { $size: 0 } },
       ],
-      status: { $in: ["upcoming", "ongoing"] },
     })
       .populate("createdBy", "name email")
       .sort({ date: 1 });
@@ -70,11 +82,15 @@ const getAvailableEvents = async (req, res) => {
   }
 };
 
-// @desc    Register for event
-// @route   POST /api/student/register-event/:eventId
-// @access  Private (Student only)
+/* =========================
+   REGISTER FOR EVENT
+   ========================= */
 const registerForEvent = async (req, res) => {
   try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const { eventId } = req.params;
     const student = await User.findById(req.user._id);
 
@@ -89,39 +105,39 @@ const registerForEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Check if event is available for student
+    const staff = await User.findById(student.classTeacherId);
+
     const isAllowed =
       event.allowedDepartments.length === 0 ||
       event.allowedDepartments.includes(student.department) ||
-      event.allowedClasses.includes(student.className);
+      (staff && event.allowedClasses.includes(staff.className));
 
     if (!isAllowed) {
-      return res.status(403).json({ message: "You are not eligible for this event" });
+      return res.status(403).json({
+        message: "You are not eligible for this event",
+      });
     }
 
-    // Check if already registered
     const existingRegistration = await Registration.findOne({
       studentId: req.user._id,
-      eventId: eventId,
+      eventId,
     });
 
     if (existingRegistration) {
-      return res.status(400).json({ message: "Already registered for this event" });
+      return res.status(400).json({ message: "Already registered" });
     }
 
-    // Check if event is full
-    if (event.currentParticipants >= event.maxParticipants) {
+    if ((event.currentParticipants || 0) >= event.maxParticipants) {
       return res.status(400).json({ message: "Event is full" });
     }
 
-    // Create registration
     const registration = await Registration.create({
       studentId: req.user._id,
-      eventId: eventId,
+      eventId,
+      registeredBy: "student",
     });
 
-    // Update event participant count
-    event.currentParticipants += 1;
+    event.currentParticipants = (event.currentParticipants || 0) + 1;
     await event.save();
 
     res.status(201).json(registration);
@@ -130,14 +146,20 @@ const registerForEvent = async (req, res) => {
   }
 };
 
-// @desc    Get student's registrations
-// @route   GET /api/student/my-registrations
-// @access  Private (Student only)
+/* =========================
+   MY REGISTRATIONS
+   ========================= */
 const getMyRegistrations = async (req, res) => {
   try {
-    const registrations = await Registration.find({ studentId: req.user._id })
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const registrations = await Registration.find({
+      studentId: req.user._id,
+    })
       .populate("eventId")
-      .sort({ registeredAt: -1 });
+      .sort({ createdAt: -1 });
 
     res.json(registrations);
   } catch (error) {
@@ -151,8 +173,3 @@ module.exports = {
   registerForEvent,
   getMyRegistrations,
 };
-
-
-
-
-

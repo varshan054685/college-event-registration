@@ -2,38 +2,32 @@ const User = require("../models/User");
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 
-// @desc    Create a new event
-// @route   POST /api/admin/create-event
-// @access  Private (Admin only)
+/* ================= CREATE EVENT ================= */
 const createEvent = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      date,
-      time,
-      venue,
-      maxParticipants,
-      category,
-      allowedDepartments,
-      allowedClasses,
-    } = req.body;
+    const requiredFields = [
+      "title",
+      "description",
+      "date",
+      "time",
+      "venue",
+      "maxParticipants",
+      "category",
+    ];
 
-    if (!title || !description || !date || !time || !venue || !maxParticipants || !category) {
-      return res.status(400).json({ message: "Please provide all required fields" });
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({
+          message: `${field} is required`,
+        });
+      }
     }
 
     const event = await Event.create({
-      title,
-      description,
-      date,
-      time,
-      venue,
-      maxParticipants,
-      category,
-      allowedDepartments: allowedDepartments || [],
-      allowedClasses: allowedClasses || [],
-      createdBy: req.user._id,
+      ...req.body,
+      allowedDepartments: req.body.allowedDepartments || [],
+      allowedClasses: req.body.allowedClasses || [],
+      createdBy: req.user.role === "admin" ? "admin" : req.user._id,
     });
 
     res.status(201).json(event);
@@ -42,9 +36,7 @@ const createEvent = async (req, res) => {
   }
 };
 
-// @desc    Get event statistics
-// @route   GET /api/admin/event-stats/:eventId
-// @access  Private (Admin only)
+/* ================= EVENT STATS ================= */
 const getEventStats = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -55,29 +47,32 @@ const getEventStats = async (req, res) => {
     }
 
     const totalRegistrations = await Registration.countDocuments({
-      eventId: eventId,
+      eventId,
       status: "registered",
     });
+
+    const availableSlots = Math.max(
+      event.maxParticipants - totalRegistrations,
+      0
+    );
 
     res.json({
       event,
       totalRegistrations,
       maxParticipants: event.maxParticipants,
-      availableSlots: event.maxParticipants - totalRegistrations,
+      availableSlots,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get all events created by admin
-// @route   GET /api/admin/events
-// @access  Private (Admin only)
+/* ================= GET ADMIN EVENTS ================= */
 const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find({ createdBy: req.user._id })
-      .populate("createdBy", "name email")
-      .sort({ createdAt: -1 });
+    const events = await Event.find({
+      createdBy: "admin",
+    }).sort({ createdAt: -1 });
 
     res.json(events);
   } catch (error) {
@@ -85,26 +80,28 @@ const getAllEvents = async (req, res) => {
   }
 };
 
-// @desc    Create staff account
-// @route   POST /api/admin/create-staff
-// @access  Private (Admin only)
+/* ================= CREATE STAFF ================= */
 const createStaff = async (req, res) => {
   try {
-    const { name, email, password, staffId, staffDepartment, className, phone } = req.body;
+    const {
+      name,
+      email,
+      password,
+      staffId,
+      staffDepartment,
+      className,
+      phone,
+    } = req.body;
 
     if (!name || !email || !password || !staffId || !staffDepartment || !className) {
-      return res.status(400).json({ message: "Please provide all required fields" });
+      return res.status(400).json({ message: "All required fields must be filled" });
     }
 
-    // Check if user exists
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Check if staffId is unique
-    const staffIdExists = await User.findOne({ staffId });
-    if (staffIdExists) {
+    if (await User.findOne({ staffId })) {
       return res.status(400).json({ message: "Staff ID already exists" });
     }
 
@@ -116,7 +113,8 @@ const createStaff = async (req, res) => {
       staffId,
       staffDepartment,
       className,
-      phone,
+      phone: phone || null,
+      profileCompleted: true,
     });
 
     res.status(201).json({
@@ -127,15 +125,14 @@ const createStaff = async (req, res) => {
       staffId: staff.staffId,
       staffDepartment: staff.staffDepartment,
       className: staff.className,
+      phone: staff.phone,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get all staff
-// @route   GET /api/admin/staff
-// @access  Private (Admin only)
+/* ================= GET ALL STAFF ================= */
 const getAllStaff = async (req, res) => {
   try {
     const staff = await User.find({ role: "staff" }).select("-password");
@@ -152,8 +149,3 @@ module.exports = {
   createStaff,
   getAllStaff,
 };
-
-
-
-
-

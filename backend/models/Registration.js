@@ -7,20 +7,19 @@ const registrationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     eventId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
       required: true,
     },
+
+    // If staff registered on behalf of student
     staffId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      // Optional: if staff registered the student
     },
-    registeredAt: {
-      type: Date,
-      default: Date.now,
-    },
+
     status: {
       type: String,
       enum: ["registered", "cancelled"],
@@ -32,7 +31,10 @@ const registrationSchema = new mongoose.Schema(
   }
 );
 
-// Prevent duplicate registrations
-registrationSchema.index({ studentId: 1, eventId: 1 }, { unique: true });
+/* ❌ Prevent duplicate registrations */
+registrationSchema.index(
+  { studentId: 1, eventId: 1 },
+  { unique: true }
+);
 
 module.exports = mongoose.model("Registration", registrationSchema);

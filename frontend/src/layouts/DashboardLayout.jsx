@@ -5,22 +5,19 @@ import Sidebar from "./Sidebar";
 
 const DashboardLayout = () => {
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div className="min-h-screen flex flex-col">
+      {/* Top Navbar */}
       <TopNavbar />
 
-      <div style={{ flex: 1, display: "flex" }}>
+      {/* Main Content */}
+      <div className="flex flex-1">
+        {/* Sidebar (desktop only – we’ll control visibility later) */}
         <Sidebar />
 
-        <div
-          style={{
-            flex: 1,
-            padding: "24px",
-            backgroundColor: "#f3f4f6",
-            overflowY: "auto",
-          }}
-        >
+        {/* Page Content */}
+        <main className="flex-1 p-6 bg-gray-100 overflow-y-auto">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

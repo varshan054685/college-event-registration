@@ -1,41 +1,54 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
-// 1️⃣ Where & how files are stored
+// 📁 Ensure upload directory exists
+const uploadDir = "uploads/brochures";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 1️⃣ Storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueName = `${Date.now()}-${Math.round(
+      Math.random() * 1e9
+    )}`;
     cb(null, uniqueName + path.extname(file.originalname));
   },
 });
 
-// 2️⃣ File type validation
+// 2️⃣ File validation
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
     "image/jpeg",
     "image/png",
     "image/jpg",
     "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Unsupported file type"), false);
+    cb(
+      new Error(
+        "Invalid file type. Only images (jpg, png) and PDF are allowed."
+      ),
+      false
+    );
   }
 };
 
-// 3️⃣ Multer config
+// 3️⃣ Multer instance
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
 });
 
 module.exports = upload;

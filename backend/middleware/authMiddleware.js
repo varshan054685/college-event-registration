@@ -4,45 +4,64 @@ const mongoose = require("mongoose");
 
 const authMiddleware = async (req, res, next) => {
   try {
+    /* ================= GET TOKEN ================= */
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({ message: "No token, authorization denied" });
+      return res.status(401).json({
+        message: "Authorization token missing",
+      });
     }
 
     const token = authHeader.split(" ")[1];
+
+    /* ================= VERIFY TOKEN ================= */
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ ADMIN — DO NOT TOUCH DATABASE
+    /* ================= ADMIN (NO DB HIT) ================= */
     if (decoded.role === "admin") {
       req.user = {
-        id: decoded.id,
+        id: "admin",
         role: "admin",
       };
-      return next(); // 🚨 EXIT HERE
+      return next();
     }
 
-    // ✅ VALIDATE ObjectId before querying MongoDB
+    /* ================= VALIDATE USER ID ================= */
     if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
-      return res.status(401).json({ message: "Invalid user ID" });
+      return res.status(401).json({
+        message: "Invalid authentication token",
+      });
     }
 
-    const user = await User.findById(decoded.id).select("-password");
+    /* ================= FETCH USER ================= */
+    const user = await User.findById(decoded.id).select(
+      "-password -otp -otpExpiresAt"
+    );
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({
+        message: "User account not found",
+      });
     }
 
+    /* ================= OTP CHECK (STUDENTS ONLY) ================= */
+    if (user.role === "student" && !user.isOtpVerified) {
+      return res.status(401).json({
+        message: "OTP verification required",
+      });
+    }
+
+    /* ================= ATTACH USER ================= */
     req.user = user;
     next();
   } catch (error) {
-    console.error("Auth error:", error.message);
-    return res.status(401).json({ message: "Token is not valid" });
+    console.error("Auth Middleware Error:", error.message);
+
+    return res.status(401).json({
+      message: "Invalid or expired token",
+    });
   }
 };
 
 module.exports = authMiddleware;
-
-

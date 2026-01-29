@@ -24,27 +24,32 @@ const Events = () => {
 
   if (loading) {
     return (
-      <div className="container">
-        <p style={{ textAlign: 'center' }}>Loading events...</p>
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <p className="text-center text-gray-600">Loading events...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container">
-        <div className="alert alert-error">{error}</div>
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="rounded-md bg-red-100 text-red-700 px-4 py-3">
+          {error}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <h2 style={{ marginBottom: '2rem' }}>All Events</h2>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <h2 className="text-2xl font-semibold mb-8">All Events</h2>
+
       {events.length === 0 ? (
-        <p style={{ textAlign: 'center' }}>No events available at the moment.</p>
+        <p className="text-center text-gray-500">
+          No events available at the moment.
+        </p>
       ) : (
-        <div>
+        <div className="space-y-4">
           {events.map((event) => (
             <EventCard key={event._id} event={event} />
           ))}
@@ -55,8 +60,3 @@ const Events = () => {
 };
 
 export default Events;
-
-
-
-
-

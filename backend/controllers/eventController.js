@@ -35,21 +35,25 @@ const getEvent = async (req, res) => {
 };
 
 /* =========================
-   CREATE EVENT (ADMIN / FACULTY)
+   CREATE EVENT (ADMIN / STAFF)
    ========================= */
 const createEvent = async (req, res) => {
   try {
+    if (!["admin", "staff"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     let brochure = null;
 
-    // 📎 Handle brochure upload (PDF / Image)
     if (req.file) {
       brochure = `/uploads/brochures/${req.file.filename}`;
     }
 
     const event = await Event.create({
       ...req.body,
-      brochure,              // ✅ brochure saved
+      brochure,
       createdBy: req.user._id,
+      currentParticipants: 0, // ✅ ensure initialized
     });
 
     res.status(201).json(event);
@@ -69,15 +73,13 @@ const updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Admin OR faculty who created the event
     if (
       event.createdBy.toString() !== req.user._id.toString() &&
       req.user.role !== "admin"
     ) {
-      return res.status(401).json({ message: "Not authorized" });
+      return res.status(403).json({ message: "Not authorized" });
     }
 
-    // 📎 Update brochure if uploaded
     if (req.file) {
       req.body.brochure = `/uploads/brochures/${req.file.filename}`;
     }
@@ -109,21 +111,25 @@ const deleteEvent = async (req, res) => {
       event.createdBy.toString() !== req.user._id.toString() &&
       req.user.role !== "admin"
     ) {
-      return res.status(401).json({ message: "Not authorized" });
+      return res.status(403).json({ message: "Not authorized" });
     }
 
     await event.deleteOne();
-    res.json({ message: "Event removed" });
+    res.json({ message: "Event removed successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 /* =========================
-   REGISTER FOR EVENT (STUDENT)
+   REGISTER FOR EVENT (STUDENT ONLY)
    ========================= */
 const registerForEvent = async (req, res) => {
   try {
+    if (req.user.role !== "student") {
+      return res.status(403).json({ message: "Only students can register" });
+    }
+
     const event = await Event.findById(req.params.id);
 
     if (!event) {
@@ -139,16 +145,17 @@ const registerForEvent = async (req, res) => {
       return res.status(400).json({ message: "Already registered" });
     }
 
-    if (event.currentParticipants >= event.maxParticipants) {
+    if ((event.currentParticipants || 0) >= event.maxParticipants) {
       return res.status(400).json({ message: "Event is full" });
     }
 
     const registration = await Registration.create({
       studentId: req.user._id,
       eventId: req.params.id,
+      registeredBy: "student",
     });
 
-    event.currentParticipants += 1;
+    event.currentParticipants = (event.currentParticipants || 0) + 1;
     await event.save();
 
     res.status(201).json(registration);
@@ -158,7 +165,7 @@ const registerForEvent = async (req, res) => {
 };
 
 /* =========================
-   GET MY REGISTRATIONS
+   GET MY REGISTRATIONS (STUDENT)
    ========================= */
 const getMyRegistrations = async (req, res) => {
   try {
@@ -166,7 +173,7 @@ const getMyRegistrations = async (req, res) => {
       studentId: req.user._id,
     })
       .populate("eventId")
-      .sort({ registeredAt: -1 });
+      .sort({ createdAt: -1 });
 
     res.json(registrations);
   } catch (error) {

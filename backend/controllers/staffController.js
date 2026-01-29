@@ -2,21 +2,21 @@ const User = require("../models/User");
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
 
-// @desc    Get events available for staff's department
-// @route   GET /api/staff/events
-// @access  Private (Staff only)
+/* =========================
+   GET EVENTS FOR STAFF
+   ========================= */
 const getStaffEvents = async (req, res) => {
   try {
-    const staff = await User.findById(req.user._id);
+    if (req.user.role !== "staff") {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
-    // Get events that match staff's department
     const events = await Event.find({
       $or: [
-        { allowedDepartments: { $in: [staff.staffDepartment] } },
-        { allowedClasses: { $in: [staff.className] } },
-        { allowedDepartments: { $size: 0 } },
+        { allowedDepartments: { $in: [req.user.staffDepartment] } },
+        { allowedClasses: { $in: [req.user.className] } },
+        { allowedDepartments: { $size: 0 } }, // open for all
       ],
-      status: { $in: ["upcoming", "ongoing"] },
     })
       .populate("createdBy", "name email")
       .sort({ date: 1 });
@@ -27,31 +27,31 @@ const getStaffEvents = async (req, res) => {
   }
 };
 
-// @desc    Get registrations for a specific event (only staff's class students)
-// @route   GET /api/staff/event/:eventId/registrations
-// @access  Private (Staff only)
+/* =========================
+   GET EVENT REGISTRATIONS (STAFF CLASS ONLY)
+   ========================= */
 const getEventRegistrations = async (req, res) => {
   try {
-    const { eventId } = req.params;
-    const staff = await User.findById(req.user._id);
+    if (req.user.role !== "staff") {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
-    // Get all students in staff's class
+    const { eventId } = req.params;
+
     const students = await User.find({
       classTeacherId: req.user._id,
       role: "student",
-    });
+    }).select("_id");
 
     const studentIds = students.map((s) => s._id);
 
-    // Get registrations for this event and these students
     const registrations = await Registration.find({
-      eventId: eventId,
+      eventId,
       studentId: { $in: studentIds },
-      status: "registered",
     })
       .populate("studentId", "name rollNumber registrationNumber contactNumber")
       .populate("eventId", "title date venue")
-      .sort({ registeredAt: -1 });
+      .sort({ createdAt: -1 });
 
     res.json({
       event: await Event.findById(eventId),
@@ -63,23 +63,28 @@ const getEventRegistrations = async (req, res) => {
   }
 };
 
-// @desc    Register a student for an event
-// @route   POST /api/staff/register-student
-// @access  Private (Staff only)
+/* =========================
+   REGISTER STUDENT BY STAFF
+   ========================= */
 const registerStudent = async (req, res) => {
   try {
-    const { studentId, eventId } = req.body;
-    const staff = await User.findById(req.user._id);
+    if (req.user.role !== "staff") {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
-    // Verify student is in staff's class
+    const { studentId, eventId } = req.body;
+
     const student = await User.findById(studentId);
-    if (!student || student.classTeacherId.toString() !== req.user._id.toString()) {
+    if (
+      !student ||
+      student.role !== "student" ||
+      student.classTeacherId.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({
         message: "You can only register students from your class",
       });
     }
 
-    // Check if student profile is completed
     if (!student.profileCompleted) {
       return res.status(400).json({
         message: "Student profile is not completed",
@@ -91,30 +96,29 @@ const registerStudent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    // Check if already registered
     const existingRegistration = await Registration.findOne({
-      studentId: studentId,
-      eventId: eventId,
+      studentId,
+      eventId,
     });
 
     if (existingRegistration) {
-      return res.status(400).json({ message: "Student already registered for this event" });
+      return res.status(400).json({
+        message: "Student already registered for this event",
+      });
     }
 
-    // Check if event is full
-    if (event.currentParticipants >= event.maxParticipants) {
+    if ((event.currentParticipants || 0) >= event.maxParticipants) {
       return res.status(400).json({ message: "Event is full" });
     }
 
-    // Create registration
     const registration = await Registration.create({
-      studentId: studentId,
-      eventId: eventId,
+      studentId,
+      eventId,
+      registeredBy: "staff",
       staffId: req.user._id,
     });
 
-    // Update event participant count
-    event.currentParticipants += 1;
+    event.currentParticipants = (event.currentParticipants || 0) + 1;
     await event.save();
 
     res.status(201).json(registration);
@@ -123,11 +127,15 @@ const registerStudent = async (req, res) => {
   }
 };
 
-// @desc    Get all students in staff's class
-// @route   GET /api/staff/my-students
-// @access  Private (Staff only)
+/* =========================
+   GET MY STUDENTS
+   ========================= */
 const getMyStudents = async (req, res) => {
   try {
+    if (req.user.role !== "staff") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const students = await User.find({
       classTeacherId: req.user._id,
       role: "student",
@@ -145,8 +153,3 @@ module.exports = {
   registerStudent,
   getMyStudents,
 };
-
-
-
-
-

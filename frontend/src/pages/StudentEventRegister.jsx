@@ -11,7 +11,7 @@ const StudentEventRegister = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ✅ Wrap in useCallback to avoid missing dependency warning
+  // ✅ Check profile completion
   const checkProfile = useCallback(async () => {
     try {
       const response = await authAPI.getMe();
@@ -58,7 +58,10 @@ const StudentEventRegister = () => {
         navigate("/student/events");
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
     }
   };
 
@@ -73,67 +76,81 @@ const StudentEventRegister = () => {
 
   if (loading) {
     return (
-      <div className="container">
-        <p>Loading event details...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading event details...</p>
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="container">
-        <div className="alert alert-error">{error || "Event not found"}</div>
+      <div className="max-w-xl mx-auto mt-10">
+        <div className="bg-red-100 text-red-700 px-4 py-3 rounded-lg">
+          {error || "Event not found"}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h2 style={{ marginBottom: "1rem" }}>{event.title}</h2>
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+        {event.title}
+      </h2>
 
-        <div className="event-card">
-          <p>
-            <strong>Description:</strong> {event.description}
-          </p>
-          <p>
-            <strong>Date:</strong> {formatDate(event.date)}
-          </p>
-          <p>
-            <strong>Time:</strong> {event.time}
-          </p>
-          <p>
-            <strong>Venue:</strong> {event.venue}
-          </p>
-          <p>
-            <strong>Category:</strong> {event.category}
-          </p>
-          <p>
-            <strong>Participants:</strong> {event.currentParticipants} / {event.maxParticipants}
-          </p>
-          <p>
-            <strong>Status:</strong> {event.status}
-          </p>
-
-          {event.currentParticipants < event.maxParticipants ? (
-            <button
-              onClick={handleRegister}
-              className="btn btn-success"
-              style={{ marginTop: "1rem" }}
-            >
-              Register for this Event
-            </button>
-          ) : (
-            <p style={{ color: "red", marginTop: "1rem" }}>Event is full</p>
-          )}
+      {error && (
+        <div className="bg-red-100 text-red-700 px-4 py-3 rounded-lg mb-4">
+          {error}
         </div>
+      )}
+
+      {success && (
+        <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg mb-4">
+          {success}
+        </div>
+      )}
+
+      <div className="bg-white border rounded-lg p-6 shadow-sm space-y-2">
+        <p>
+          <span className="font-semibold">Description:</span>{" "}
+          {event.description}
+        </p>
+        <p>
+          <span className="font-semibold">Date:</span>{" "}
+          {formatDate(event.date)}
+        </p>
+        <p>
+          <span className="font-semibold">Time:</span> {event.time}
+        </p>
+        <p>
+          <span className="font-semibold">Venue:</span> {event.venue}
+        </p>
+        <p>
+          <span className="font-semibold">Category:</span> {event.category}
+        </p>
+        <p>
+          <span className="font-semibold">Participants:</span>{" "}
+          {event.currentParticipants} / {event.maxParticipants}
+        </p>
+        <p>
+          <span className="font-semibold">Status:</span> {event.status}
+        </p>
+
+        {event.currentParticipants < event.maxParticipants ? (
+          <button
+            onClick={handleRegister}
+            className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition"
+          >
+            Register for this Event
+          </button>
+        ) : (
+          <p className="text-red-600 mt-4 font-medium">
+            Event is full
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
 export default StudentEventRegister;
-
-

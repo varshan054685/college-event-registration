@@ -3,50 +3,67 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
+    /* ================= BASIC INFO ================= */
     name: {
       type: String,
-      required: [true, "Please provide a name"],
+      required: true,
       trim: true,
     },
+
     email: {
       type: String,
-      required: [true, "Please provide an email"],
+      required: true,
       unique: true,
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
-      required: [true, "Please provide a password"],
+      required: true,
       minlength: 6,
     },
+
+    phone: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+
     role: {
       type: String,
-      enum: ["student", "admin", "staff"],
+      enum: ["student", "staff", "admin"],
       default: "student",
     },
 
     /* ================= STUDENT FIELDS ================= */
     rollNumber: {
       type: String,
+      sparse: true,
       trim: true,
     },
+
     registrationNumber: {
       type: String,
+      sparse: true,
       trim: true,
     },
+
     contactNumber: {
       type: String,
       trim: true,
     },
+
     department: {
       type: String,
       trim: true,
     },
+
     classTeacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+
     profileCompleted: {
       type: Boolean,
       default: false,
@@ -55,50 +72,48 @@ const userSchema = new mongoose.Schema(
     /* ================= STAFF FIELDS ================= */
     staffId: {
       type: String,
-      trim: true,
       unique: true,
       sparse: true,
+      trim: true,
     },
+
     staffDepartment: {
       type: String,
       trim: true,
     },
+
     className: {
       type: String,
       trim: true,
     },
-    phone: {
-      type: String,
-      trim: true,
-    },
 
-    /* ================= OTP FIELDS ================= */
+    /* ================= OTP LOGIN ================= */
     otp: {
       type: String,
     },
+
     otpExpiresAt: {
       type: Date,
     },
+
     isOtpVerified: {
       type: Boolean,
       default: false,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-/* ========== HASH PASSWORD BEFORE SAVE ========== */
+/* 🔐 Hash password */
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-/* ========== COMPARE PASSWORD ========== */
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+/* 🔑 Compare password */
+userSchema.methods.comparePassword = function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model("User", userSchema);

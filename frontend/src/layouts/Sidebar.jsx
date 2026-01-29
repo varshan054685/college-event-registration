@@ -1,58 +1,54 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import "./Sidebar.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+
+  let user = null;
+  try {
+    const storedUser = localStorage.getItem("user");
+    user = storedUser ? JSON.parse(storedUser) : null;
+  } catch (err) {
+    console.error("Invalid user data in localStorage");
+    user = null;
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
+  const linkClass = ({ isActive }) =>
+    `block px-4 py-2 mb-1 rounded-md text-sm font-medium transition
+     ${
+       isActive
+         ? "bg-indigo-600 text-white"
+         : "text-gray-300 hover:bg-gray-700 hover:text-white"
+     }`;
+
   return (
-    <div className="sidebar">
-      <h3 className="sidebar-title">Menu</h3>
+    /* Hidden on mobile & tablet */
+    <aside className="hidden lg:flex lg:flex-col w-60 bg-gray-900 text-white min-h-screen p-4">
+      <h3 className="mb-5 text-lg font-semibold">Menu</h3>
 
       {/* COMMON */}
-      <NavLink
-        to="/profile"
-        className={({ isActive }) =>
-          isActive ? "sidebar-link active" : "sidebar-link"
-        }
-      >
+      <NavLink to="/profile" className={linkClass}>
         Profile
       </NavLink>
 
-      <NavLink
-        to="/account"
-        className={({ isActive }) =>
-          isActive ? "sidebar-link active" : "sidebar-link"
-        }
-      >
+      <NavLink to="/account" className={linkClass}>
         Account
       </NavLink>
 
       {/* STUDENT */}
       {user?.role === "student" && (
         <>
-          <NavLink
-            to="/student/events"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/student/events" className={linkClass}>
             Events
           </NavLink>
 
-          <NavLink
-            to="/student/my-events"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/student/my-events" className={linkClass}>
             My Registrations
           </NavLink>
         </>
@@ -61,31 +57,12 @@ const Sidebar = () => {
       {/* STAFF */}
       {user?.role === "staff" && (
         <>
-          <NavLink
-            to="/staff/dashboard"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/staff/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
 
-          <NavLink
-            to="/staff/events"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/staff/events" className={linkClass}>
             Events
-          </NavLink>
-
-          <NavLink
-            to="/staff/registrations"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
-            Student Registrations
           </NavLink>
         </>
       )}
@@ -93,58 +70,28 @@ const Sidebar = () => {
       {/* ADMIN */}
       {user?.role === "admin" && (
         <>
-          <NavLink
-            to="/admin/dashboard"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/admin/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
 
-          <NavLink
-            to="/admin/events"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/admin/events" className={linkClass}>
             Manage Events
           </NavLink>
 
-          <NavLink
-            to="/admin/add-faculty"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
-            Add Faculty
-          </NavLink>
-
-          <NavLink
-            to="/admin/add-admin"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
-            Add Admin
-          </NavLink>
-
-          <NavLink
-            to="/admin/users"
-            className={({ isActive }) =>
-              isActive ? "sidebar-link active" : "sidebar-link"
-            }
-          >
+          <NavLink to="/admin/users" className={linkClass}>
             All Users
           </NavLink>
         </>
       )}
 
       {/* LOGOUT */}
-      <button className="logout-btn" onClick={handleLogout}>
+      <button
+        onClick={handleLogout}
+        className="mt-6 w-full rounded-md bg-red-500 py-2 text-sm font-semibold hover:bg-red-600 transition"
+      >
         Logout
       </button>
-    </div>
+    </aside>
   );
 };
 

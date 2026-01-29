@@ -1,10 +1,18 @@
-const checkRole = (...roles) => {
+const checkRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({
+        message: "Unauthorized access",
+      });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!req.user.role) {
+      return res.status(403).json({
+        message: "User role not defined",
+      });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         message: "Access denied. Insufficient permissions.",
       });
@@ -15,8 +23,3 @@ const checkRole = (...roles) => {
 };
 
 module.exports = { checkRole };
-
-
-
-
-

@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
+
 const { sendEventDaySMS } = require("../services/smsService");
 const authMiddleware = require("../middleware/authMiddleware");
 const { checkRole } = require("../middleware/roleMiddleware");
 
-// @desc    Trigger SMS for event day (Admin only)
-// @route   POST /api/sms/send-event-sms/:eventId
-// @access  Private (Admin only)
+/* ================= SMS / NOTIFICATIONS ================= */
+
+// Trigger SMS for event day (Admin only)
 router.post(
   "/send-event-sms/:eventId",
   authMiddleware,
@@ -15,7 +16,7 @@ router.post(
     try {
       const { eventId } = req.params;
       const result = await sendEventDaySMS(eventId);
-      
+
       if (result.success) {
         res.json({ message: "SMS sent successfully", result });
       } else {
@@ -28,8 +29,3 @@ router.post(
 );
 
 module.exports = router;
-
-
-
-
-

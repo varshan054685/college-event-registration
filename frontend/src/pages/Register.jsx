@@ -1,37 +1,34 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authAPI } from "../services/api";
 
 const Register = () => {
-  const [userType, setUserType] = useState("student"); // student, staff (admin cannot register)
+  const [userType, setUserType] = useState("student");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -42,144 +39,71 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        role: userType, // Pass selected role
+        role: userType,
       });
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data));
 
-      // Redirect based on role and profile completion
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data));
+
       const user = response.data;
-      if (user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (user.role === "staff") {
-        navigate("/staff/dashboard");
-      } else if (user.role === "student") {
-        if (!user.profileCompleted) {
-          navigate("/complete-profile");
-        } else {
-          navigate("/student/events");
-        }
-      } else {
-        navigate("/events");
-      }
+      if (user.role === "admin") navigate("/admin/dashboard");
+      else if (user.role === "staff") navigate("/staff/dashboard");
+      else if (user.role === "student") {
+        if (!user.profileCompleted) navigate("/complete-profile");
+        else navigate("/student/events");
+      } else navigate("/events");
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(
+        err.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      display: "flex", 
-      justifyContent: "center", 
-      alignItems: "center",
-      backgroundColor: "#f3f4f6"
-    }}>
-      <div style={{
-        backgroundColor: "white",
-        color: "#6b7280",
-        maxWidth: "420px",
-        margin: "0 16px",
-        padding: "32px",
-        textAlign: "left",
-        fontSize: "14px",
-        borderRadius: "12px",
-        boxShadow: "0px 0px 10px 0px rgba(0, 0, 0, 0.1)"
-      }}>
-        <h2 style={{
-          fontSize: "24px",
-          fontWeight: "600",
-          marginBottom: "8px",
-          textAlign: "center",
-          color: "#1f2937"
-        }}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-md p-8">
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-2">
           Create Account
         </h2>
-        
-        <p style={{
-          fontSize: "14px",
-          textAlign: "center",
-          color: "#6b7280",
-          marginBottom: "24px"
-        }}>
+        <p className="text-sm text-center text-gray-500 mb-6">
           Sign up to get started
         </p>
 
-        {/* Role Selection Tabs */}
-        <div style={{
-          display: "flex",
-          gap: "8px",
-          marginBottom: "24px",
-          backgroundColor: "#f3f4f6",
-          padding: "4px",
-          borderRadius: "8px"
-        }}>
-          <button
-            type="button"
-            onClick={() => setUserType("student")}
-            style={{
-              flex: 1,
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "none",
-              backgroundColor: userType === "student" ? "#6366f1" : "transparent",
-              color: userType === "student" ? "white" : "#6b7280",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "500",
-              transition: "all 0.2s"
-            }}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            onClick={() => setUserType("staff")}
-            style={{
-              flex: 1,
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "none",
-              backgroundColor: userType === "staff" ? "#6366f1" : "transparent",
-              color: userType === "staff" ? "white" : "#6b7280",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "500",
-              transition: "all 0.2s"
-            }}
-          >
-            Faculty
-          </button>
+        {/* Role Tabs */}
+        <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
+          {["student", "staff"].map((role) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => setUserType(role)}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition
+                ${
+                  userType === role
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              {role === "student" ? "Student" : "Faculty"}
+            </button>
+          ))}
         </div>
 
-        <div style={{
-          padding: "10px",
-          marginBottom: "16px",
-          backgroundColor: "#eff6ff",
-          color: "#1e40af",
-          borderRadius: "8px",
-          fontSize: "12px",
-          textAlign: "center"
-        }}>
-          <strong>Note:</strong> Admin accounts are created by existing administrators. Please contact your admin for access.
+        {/* Admin Note */}
+        <div className="bg-blue-50 text-blue-800 text-xs rounded-lg px-4 py-3 mb-4 text-center">
+          <strong>Note:</strong> Admin accounts are created by existing
+          administrators.
         </div>
 
         {error && (
-          <div style={{
-            padding: "12px",
-            marginBottom: "16px",
-            backgroundColor: "#fee2e2",
-            color: "#991b1b",
-            borderRadius: "8px",
-            fontSize: "14px"
-          }}>
+          <div className="bg-red-100 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="text"
             name="name"
@@ -187,16 +111,7 @@ const Register = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              backgroundColor: "transparent",
-              border: "1px solid rgba(107, 114, 128, 0.3)",
-              outline: "none",
-              borderRadius: "9999px",
-              padding: "10px 16px",
-              marginBottom: "12px",
-              fontSize: "14px"
-            }}
+            className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <input
@@ -206,16 +121,7 @@ const Register = () => {
             value={formData.email}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              backgroundColor: "transparent",
-              border: "1px solid rgba(107, 114, 128, 0.3)",
-              outline: "none",
-              borderRadius: "9999px",
-              padding: "10px 16px",
-              marginBottom: "12px",
-              fontSize: "14px"
-            }}
+            className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <input
@@ -225,16 +131,7 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              backgroundColor: "transparent",
-              border: "1px solid rgba(107, 114, 128, 0.3)",
-              outline: "none",
-              borderRadius: "9999px",
-              padding: "10px 16px",
-              marginBottom: "12px",
-              fontSize: "14px"
-            }}
+            className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <input
@@ -244,70 +141,30 @@ const Register = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            style={{
-              width: "100%",
-              backgroundColor: "transparent",
-              border: "1px solid rgba(107, 114, 128, 0.3)",
-              outline: "none",
-              borderRadius: "9999px",
-              padding: "10px 16px",
-              marginBottom: "12px",
-              fontSize: "14px"
-            }}
+            className="w-full rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: "100%",
-              marginBottom: "12px",
-              backgroundColor: loading ? "#9ca3af" : "#6366f1",
-              padding: "10px",
-              borderRadius: "9999px",
-              color: "white",
-              border: "none",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: "16px",
-              fontWeight: "500"
-            }}
+            className={`w-full rounded-full py-2 text-white font-medium transition
+              ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700"
+              }`}
           >
             {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 
-        <div style={{
-          textAlign: "center",
-          marginTop: "24px",
-          paddingTop: "24px",
-          borderTop: "1px solid #e5e7eb"
-        }}>
-          <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "8px" }}>
+        <div className="text-center mt-6 pt-6 border-t">
+          <p className="text-sm text-gray-500 mb-2">
             Already have an account?
           </p>
           <button
-            type="button"
             onClick={() => navigate("/login")}
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "9999px",
-              backgroundColor: "transparent",
-              border: "1px solid #6366f1",
-              color: "#6366f1",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: "500",
-              transition: "all 0.2s"
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = "#6366f1";
-              e.target.style.color = "white";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#6366f1";
-            }}
+            className="w-full rounded-full py-2 border border-indigo-600 text-indigo-600 text-sm font-medium hover:bg-indigo-600 hover:text-white transition"
           >
             Sign In
           </button>
@@ -318,4 +175,3 @@ const Register = () => {
 };
 
 export default Register;
-
