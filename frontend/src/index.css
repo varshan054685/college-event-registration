@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-void text-text-primary font-body;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: #7c3aed44; color: #f0f0fa; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-surface; }
+  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-accent; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 px-6 py-3 font-display font-semibold text-white rounded-xl
+           bg-accent hover:bg-accent-light transition-all duration-300
+           shadow-glow-sm hover:shadow-glow active:scale-95 overflow-hidden;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-display font-semibold text-text-primary rounded-xl
+           bg-card border border-border hover:border-accent/50 hover:bg-surface
+           transition-all duration-300 active:scale-95;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 font-medium text-text-secondary rounded-lg
+           hover:text-text-primary hover:bg-white/5 transition-all duration-200;
+  }
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/60 rounded-2xl;
+  }
+  .input {
+    @apply w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted
+           focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-200;
+  }
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-mono font-medium;
+  }
+  .section-title {
+    @apply font-display text-3xl sm:text-4xl font-bold text-text-primary;
+  }
+  .skeleton {
+    @apply animate-pulse bg-gradient-to-r from-surface via-card to-surface rounded-xl;
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.4;
+}
