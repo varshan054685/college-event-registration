@@ -26,6 +26,7 @@ const CATEGORIES = [
 export default function HomePage() {
   const dispatch = useDispatch();
   const { featured, loading } = useSelector((s) => s.events);
+  const { user } = useSelector((s) => s.auth);
 
   useEffect(() => { dispatch(fetchFeatured()); }, [dispatch]);
 
@@ -71,7 +72,7 @@ export default function HomePage() {
             variants={fadeUp} initial="hidden" animate="visible" custom={0.3}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Link to="/events">
+            <Link to={user ? "/events" : "/login"}>
               <motion.span
                 whileHover={{ scale: 1.05, boxShadow: '0 0 40px #7c3aed66' }}
                 whileTap={{ scale: 0.95 }}
@@ -79,14 +80,6 @@ export default function HomePage() {
               >
                 Explore Events
                 <span className="ml-1">→</span>
-              </motion.span>
-            </Link>
-            <Link to="/register">
-              <motion.span
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                className="btn-secondary px-8 py-4 text-base inline-flex"
-              >
-                Create Account
               </motion.span>
             </Link>
           </motion.div>
@@ -136,7 +129,7 @@ export default function HomePage() {
               <p className="text-accent-light text-sm font-mono font-medium mb-2 uppercase tracking-widest">Spotlight</p>
               <h2 className="section-title">Featured Events</h2>
             </div>
-            <Link to="/events">
+            <Link to={user ? "/events" : "/login"}>
               <motion.span whileHover={{ x: 4 }}
                 className="text-accent-light text-sm font-medium flex items-center gap-1 hover:text-accent transition-colors">
                 View all <span>→</span>
@@ -148,7 +141,7 @@ export default function HomePage() {
             <EventSkeleton count={4} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featured.map((event, i) => <EventCard key={event._id} event={event} index={i} />)}
+              {featured.map((event, i) => <EventCard key={event._id} event={event} index={i} user={user} />)}
             </div>
           )}
         </div>
@@ -167,7 +160,7 @@ export default function HomePage() {
               <motion.div key={cat.name} variants={fadeUp} initial="hidden" whileInView="visible"
                 custom={i * 0.07} viewport={{ once: true }}
                 whileHover={{ y: -4, scale: 1.02 }}>
-                <Link to={`/events?category=${cat.name}`}
+                <Link to={user ? `/events?category=${cat.name}` : "/login"}
                   className={`block glass-card p-5 text-center bg-gradient-to-b ${cat.color} hover:border-accent/40 transition-all duration-300`}>
                   <div className="text-3xl mb-2">{cat.icon}</div>
                   <p className="font-display font-semibold text-sm text-text-primary">{cat.name}</p>
@@ -193,15 +186,27 @@ export default function HomePage() {
                 <p className="text-text-secondary mb-8 max-w-lg mx-auto">
                   Create your free account and start registering for events in under a minute.
                 </p>
-                <Link to="/register">
-                  <motion.span
-                    whileHover={{ scale: 1.05, boxShadow: '0 0 40px #7c3aed66' }}
-                    whileTap={{ scale: 0.95 }}
-                    className="btn-primary px-10 py-4 text-base inline-flex"
-                  >
-                    Sign up — It's Free ✨
-                  </motion.span>
-                </Link>
+                {user ? (
+                  <Link to="/events">
+                    <motion.span
+                      whileHover={{ scale: 1.05, boxShadow: '0 0 40px #7c3aed66' }}
+                      whileTap={{ scale: 0.95 }}
+                      className="btn-primary px-10 py-4 text-base inline-flex"
+                    >
+                      Explore Events →
+                    </motion.span>
+                  </Link>
+                ) : (
+                  <Link to="/register">
+                    <motion.span
+                      whileHover={{ scale: 1.05, boxShadow: '0 0 40px #7c3aed66' }}
+                      whileTap={{ scale: 0.95 }}
+                      className="btn-primary px-10 py-4 text-base inline-flex"
+                    >
+                      Sign up — It's Free ✨
+                    </motion.span>
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>

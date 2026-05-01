@@ -13,7 +13,7 @@ const CATEGORY_COLORS = {
   Other: 'text-text-secondary bg-surface border-border',
 };
 
-export default function EventCard({ event, index = 0 }) {
+export default function EventCard({ event, index = 0, user = null }) {
   const spotsLeft = event.capacity - event.registeredCount;
   const isFull = spotsLeft <= 0;
   const isAlmostFull = spotsLeft > 0 && spotsLeft <= 10;
@@ -27,7 +27,7 @@ export default function EventCard({ event, index = 0 }) {
       viewport={{ once: true, margin: '-50px' }}
       whileHover={{ y: -6, transition: { duration: 0.3 } }}
     >
-      <Link to={`/events/${event._id}`} className="group block h-full">
+      <Link to={user ? `/events/${event._id}` : "/login"} className="group block h-full">
         <div className="glass-card h-full overflow-hidden hover:border-accent/40 hover:shadow-card-hover transition-all duration-500">
           {/* Image */}
           <div className="relative aspect-[16/9] overflow-hidden bg-surface">
